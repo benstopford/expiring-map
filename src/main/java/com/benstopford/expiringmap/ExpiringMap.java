@@ -51,7 +51,7 @@ public class ExpiringMap<K, V> implements ExpireMap<K, V> {
 
     private void removeExpiredEntries() {
         for (long expiry : orderedExpiryTimes.keySet()) {
-            if (hasExpired(expiry)) {
+            if (expiry <= clock.now()) {
                 orderedExpiryTimes.get(expiry)
                         .forEach(map::remove);
             } else {
@@ -59,10 +59,6 @@ public class ExpiringMap<K, V> implements ExpireMap<K, V> {
                 break;
             }
         }
-    }
-
-    private boolean hasExpired(long expiry) {
-        return expiry <= clock.now();
     }
 
     private void flagForFutureExpiry(K entryKey, long timeoutMs) {
