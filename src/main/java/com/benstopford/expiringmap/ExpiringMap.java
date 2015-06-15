@@ -4,10 +4,10 @@ import java.util.*;
 
 /**
  * HashMap backed cache that provides configurable expiry.
- *
+ * <p>
  * Expired entries will be removed when any method on the <tt>ExpireMap</tt> interface
  * is invoked.
- *
+ * <p>
  * Expiry times for each entry are held in chronological order so that only
  * entries that require expiry will be examined on any operation against
  * this map.
@@ -30,12 +30,12 @@ public class ExpiringMap<K, V> implements ExpireMap<K, V> {
     }
 
     @Override
-    public synchronized void put(K entryKey, V value, long timeoutMs) {
+    public synchronized void put(K key, V value, long timeoutMs) {
         removeExpiredEntries();
 
-        flagForFutureExpiry(entryKey, timeoutMs);
+        recordFutureExpiry(key, timeoutMs);
 
-        map.put(entryKey, value);
+        map.put(key, value);
     }
 
     @Override
@@ -55,30 +55,31 @@ public class ExpiringMap<K, V> implements ExpireMap<K, V> {
             if (expiry <= clock.now()) {
                 orderedExpiryTimes.get(expiry)
                         .forEach(map::remove);
-            } else {
-                //all subsequent entries will be in the future
-                break;
-            }
+            } else break; //all subsequent entries will be in the future
         }
     }
 
-    private void flagForFutureExpiry(K entryKey, long timeoutMs) {
+    private void recordFutureExpiry(K entryKey, long timeoutMs) {
+        long expiryTime = getExpiryTime(timeoutMs);
+
+        List<K> existingKeys = orderedExpiryTimes.get(expiryTime);
+
+        if (existingKeys == null)
+            existingKeys = new ArrayList<>();
+        existingKeys.add(entryKey);
+
+        orderedExpiryTimes.put(expiryTime, existingKeys);
+    }
+
+    private long getExpiryTime(long timeoutMs) {
         if (timeoutMs < 0)
             throw new IllegalArgumentException("Timeout must be a positive value");
 
         long expiryTime = clock.now() + timeoutMs;
+
         if (expiryTime < 0)
             expiryTime = Long.MAX_VALUE;
 
-        save(entryKey, expiryTime);
-    }
-
-    private void save(K entryKey, long expiryTime) {
-        List<K> keys = orderedExpiryTimes.get(expiryTime);
-        if (keys == null)
-            keys = new ArrayList<>();
-        keys.add(entryKey);
-
-        orderedExpiryTimes.put(expiryTime, keys);
+        return expiryTime;
     }
 }
