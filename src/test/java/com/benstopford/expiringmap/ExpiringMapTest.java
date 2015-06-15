@@ -84,6 +84,40 @@ public class ExpiringMapTest {
     }
 
     @Test
+    public void shouldRetrieveMultipleValuesWithSameExpiry() {
+        //Given
+        ExpiringMap<String, String> map = new ExpiringMap(() -> now);
+        now = 0;
+
+        //When
+        map.put("key1", "value1", 5);
+        map.put("key2", "value2", 5);
+
+        //Then
+        assertThat(map.get("key1"), is("value1"));
+        assertThat(map.get("key2"), is("value2"));
+    }
+
+
+    @Test
+    public void shouldExpireMultipleValuesWithSameExpiry() {
+        //Given
+        ExpiringMap<String, String> map = new ExpiringMap(() -> now);
+        now = 0;
+
+        //When
+        map.put("key1", "value1", 5);
+        map.put("key2", "value2", 5);
+
+        now = 6;
+
+        //Then
+        assertThat(map.get("key1"), is(nullValue()));
+        assertThat(map.get("key2"), is(nullValue()));
+    }
+
+
+    @Test
     public void shouldOnlyAttemptExpiryOnValidEntriesForPerformanceReasons() {
         Clock clock = mock(Clock.class);
         ExpiringMap<Integer, String> map = new ExpiringMap(clock);

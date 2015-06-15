@@ -1,12 +1,10 @@
 package com.benstopford.expiringmap;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 public class ExpiringMap<K, V> implements ExpireMap<K, V> {
     Map<K, V> map = new HashMap();
-    Map<Long, K> orderedExpiryTimes = new TreeMap();
+    Map<Long, List<K>> orderedExpiryTimes = new TreeMap();
     private Clock clock;
 
     public ExpiringMap(Clock clock) {
@@ -18,17 +16,28 @@ public class ExpiringMap<K, V> implements ExpireMap<K, V> {
     }
 
     @Override
-    public void put(K key, V value, long timeoutMs) {
+    public void put(K entryKey, V value, long timeoutMs) {
         expire();
-        map.put(key, value);
+        map.put(entryKey, value);
 
         long expiryTime = clock.now() + timeoutMs;
 
-        orderedExpiryTimes.put(checkForOverflow(expiryTime), key);
+        saveExpiry(entryKey, expiryTime);
+    }
+
+    private void saveExpiry(K entryKey, long expiryTime) {
+        long expiry = checkForOverflow(expiryTime);
+
+        List<K> keys = orderedExpiryTimes.get(expiry);
+        if (keys == null)
+            keys = new ArrayList();
+        keys.add(entryKey);
+
+        orderedExpiryTimes.put(expiry, keys);
     }
 
     private long checkForOverflow(long expiryTime) {
-        if(expiryTime<0)
+        if (expiryTime < 0)
             expiryTime = Long.MAX_VALUE;
         return expiryTime;
     }
@@ -36,9 +45,9 @@ public class ExpiringMap<K, V> implements ExpireMap<K, V> {
     private void expire() {
         for (long expiry : orderedExpiryTimes.keySet()) {
             if (hasExpired(expiry)) {
-                K key = orderedExpiryTimes.get(expiry);
-                map.remove(key);
-            }else{
+                orderedExpiryTimes.get(expiry)
+                        .forEach(map::remove);
+            } else {
                 //all subsequent entries will be in the future
                 break;
             }
