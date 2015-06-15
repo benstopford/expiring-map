@@ -16,7 +16,7 @@ public class ExpiringMap<K, V> implements ExpireMap<K, V> {
     }
 
     @Override
-    public void put(K entryKey, V value, long timeoutMs) {
+    public synchronized void put(K entryKey, V value, long timeoutMs) {
         expire();
         map.put(entryKey, value);
 
@@ -59,13 +59,13 @@ public class ExpiringMap<K, V> implements ExpireMap<K, V> {
     }
 
     @Override
-    public V get(K key) {
+    public synchronized V get(K key) {
         expire();
         return map.get(key);
     }
 
     @Override
-    public void remove(K key) {
+    public synchronized void remove(K key) {
         expire();
         map.remove(key);
     }
