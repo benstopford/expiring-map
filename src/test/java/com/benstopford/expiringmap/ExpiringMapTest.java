@@ -40,7 +40,7 @@ public class ExpiringMapTest {
     }
 
     @Test
-    public void shouldNotExpireEntriesBeforeExpiryTime() {
+    public void shouldNotExpireEntriesWithRemainingTime() {
         //Given
         ExpiringMap<String, String> map = new ExpiringMap(() -> now);
         now = 42;
@@ -48,14 +48,14 @@ public class ExpiringMapTest {
         map.put("key1", "value1", expiresIn);
 
         //When
-        now = 55; //i.e. before than 42+10
+        now = 50; //i.e. before 52
 
         //Then
         assertThat(map.get("key1"), is("value1"));
     }
 
     @Test
-    public void shouldExpireEntriesAfterExpiryTime() {
+    public void shouldExpireEntriesInThePast() {
         //Given
         ExpiringMap<String, String> map = new ExpiringMap(() -> now);
         now = 42;
@@ -63,7 +63,7 @@ public class ExpiringMapTest {
         map.put("key1", "value1", expiresIn);
 
         //When
-        now = 53; //i.e. after than 42+10
+        now = 55; //i.e. after 52
 
         //Then
         assertThat(map.get("key1"), is(nullValue()));
