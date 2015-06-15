@@ -5,9 +5,10 @@ import java.util.*;
 /**
  * HashMap backed cache that provides configurable expiry.
  *
- * Entries will be validated for expiry on any action of the interface.
+ * Expired entries will be removed when any method on the <tt>ExpireMap</tt> interface
+ * is invoked.
  *
- * Expiry times for each entry are held IN chronological order so that only
+ * Expiry times for each entry are held in chronological order so that only
  * entries that require expiry will be examined on any operation against
  * this map.
  *
