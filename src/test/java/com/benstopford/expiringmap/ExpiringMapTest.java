@@ -10,7 +10,6 @@ import org.junit.Test;
 public class ExpiringMapTest {
     long now;
 
-
     @Test
     public void shouldPutAndGetValues() {
 
@@ -85,23 +84,23 @@ public class ExpiringMapTest {
     }
 
     @Test
-    public void shouldOnlyAttemptExpiryOnValidEntries() {
+    public void shouldOnlyAttemptExpiryOnValidEntriesForPerformanceReasons() {
         Clock clock = mock(Clock.class);
-        ExpiringMap<String, String> map = new ExpiringMap(clock);
-
+        ExpiringMap<Integer, String> map = new ExpiringMap(clock);
         when(clock.now()).thenReturn(100L);
 
-        map.put("key1", "value1", 5);
-        map.put("key2", "value2", 6);
-        map.put("key3", "value3", 7);
-        map.put("key4", "value4", 8);
-        map.put("key5", "value5", 9);
+        //Given 100 entries
+        for (int i = 0; i < 100; i++)
+            map.put(i, "value", i);
 
         reset(clock);
-        when(clock.now()).thenReturn(106L);
-        map.get("whatever");
 
-        verify(clock, times(3)).now();
+        //When time moves on so five values should expire
+        when(clock.now()).thenReturn(104L);
+        map.get(-1);
+
+        //We only do five plus one comparisons
+        verify(clock, times(6)).now();
     }
 
 }
