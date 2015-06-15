@@ -40,7 +40,7 @@ public class ExpiringMapTest {
         assertThat(map.get("key1"), is(nullValue()));
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void shouldThrowExceptionForNegativeTimeouts() {
         new ExpiringMap<String, String>().put("k", "v", -5);
     }
@@ -61,7 +61,7 @@ public class ExpiringMapTest {
         map.put("key1", "value1", expiresIn);
 
         //When
-        now = 5;
+        now += 5;
 
         //Then
         assertThat(map.get("key1"), is("value1"));
@@ -76,7 +76,7 @@ public class ExpiringMapTest {
         map.put("key1", "value1", expiresIn);
 
         //When
-        now = 11;
+        now += 11;
 
         //Then
         assertThat(map.get("key1"), is(nullValue()));
@@ -91,7 +91,7 @@ public class ExpiringMapTest {
         map.put("key1", "value1", expiresIn);
 
         //When
-        now = 10;
+        now += 10;
 
         //Then
         assertThat(map.get("key1"), is(nullValue()));
@@ -122,7 +122,7 @@ public class ExpiringMapTest {
         map.put("key1", "value1", 5);
         map.put("key2", "value2", 5);
 
-        now = 6;
+        now += 6;
 
         //Then
         assertThat(map.get("key1"), is(nullValue()));
@@ -149,6 +149,25 @@ public class ExpiringMapTest {
         verify(clock, times(6)).now();
     }
 
+    @Test
+    public void shouldSupportOutOfOrderTimeouts() {
+        //Given
+        ExpiringMap<String, String> map = new ExpiringMap<>(() -> now);
+        now = 0;
+
+        //When
+        map.put("key1", "value1", 25);
+        map.put("key2", "value2", 5);
+        map.put("key3", "value3", 15);
+
+        now += 7;
+
+        assertThat(map.get("key1"), is("value1"));
+        assertThat(map.get("key2"), is(nullValue()));
+        assertThat(map.get("key3"), is("value3"));
+    }
+
 }
     
+
 
