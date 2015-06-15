@@ -3,6 +3,7 @@ package com.benstopford.expiringmap;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.*;
 import static org.hamcrest.core.Is.is;
+import static org.mockito.Mockito.*;
 
 import org.junit.Test;
 
@@ -81,6 +82,26 @@ public class ExpiringMapTest {
 
         //Then
         assertThat(map.get("key1"), is(nullValue()));
+    }
+
+    @Test
+    public void shouldOnlyAttemptExpiryOnValidEntries() {
+        Clock clock = mock(Clock.class);
+        ExpiringMap<String, String> map = new ExpiringMap(clock);
+
+        when(clock.now()).thenReturn(100L);
+
+        map.put("key1", "value1", 5);
+        map.put("key2", "value2", 6);
+        map.put("key3", "value3", 7);
+        map.put("key4", "value4", 8);
+        map.put("key5", "value5", 9);
+
+        reset(clock);
+        when(clock.now()).thenReturn(106L);
+        map.get("whatever");
+
+        verify(clock, times(3)).now();
     }
 
 }

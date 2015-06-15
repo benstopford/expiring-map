@@ -2,10 +2,11 @@ package com.benstopford.expiringmap;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 public class ExpiringMap<K, V> implements ExpireMap<K, V> {
     Map<K, V> map = new HashMap();
-    Map<K, Long> timeouts = new HashMap();
+    Map<Long, K> orderedExpiryTimes = new TreeMap();
     private Clock clock;
 
     public ExpiringMap(Clock clock) {
@@ -23,7 +24,7 @@ public class ExpiringMap<K, V> implements ExpireMap<K, V> {
 
         long expiryTime = clock.now() + timeoutMs;
 
-        timeouts.put(key, checkForOverflow(expiryTime));
+        orderedExpiryTimes.put(checkForOverflow(expiryTime), key);
     }
 
     private long checkForOverflow(long expiryTime) {
@@ -33,12 +34,19 @@ public class ExpiringMap<K, V> implements ExpireMap<K, V> {
     }
 
     private void expire() {
-        for (K key : map.keySet()) {
-            long expiry = timeouts.get(key);
-            if (clock.now() >= expiry) {
+        for (long expiry : orderedExpiryTimes.keySet()) {
+            if (hasExpired(expiry)) {
+                K key = orderedExpiryTimes.get(expiry);
                 map.remove(key);
+            }else{
+                //all subsequent entries will be in the future
+                break;
             }
         }
+    }
+
+    private boolean hasExpired(long expiry) {
+        return expiry <= clock.now();
     }
 
     @Override
