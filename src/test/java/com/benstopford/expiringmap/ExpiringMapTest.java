@@ -15,7 +15,6 @@ public class ExpiringMapTest {
 
     @Test
     public void shouldPutAndGetValues() {
-
         //Given
         ExpiringMap<String, String> map = new ExpiringMap<>();
 
@@ -133,8 +132,8 @@ public class ExpiringMapTest {
     @Test
     public void shouldOnlyAttemptExpiryOnValidEntriesForPerformanceReasons() {
         Clock clock = mock(Clock.class);
+        when(clock.now()).thenReturn(0L);
         ExpiringMap<Integer, String> map = new ExpiringMap<>(clock);
-        when(clock.now()).thenReturn(100L);
 
         //Given 100 entries
         for (int i = 0; i < 100; i++)
@@ -143,10 +142,10 @@ public class ExpiringMapTest {
         reset(clock);
 
         //When time moves on so five values should expire
-        when(clock.now()).thenReturn(104L);
+        when(clock.now()).thenReturn(4L);
         map.get(-1);
 
-        //We only do five plus one comparisons
+        //Then there should only have been five (plus one) comparisons
         verify(clock, times(6)).now();
     }
 
