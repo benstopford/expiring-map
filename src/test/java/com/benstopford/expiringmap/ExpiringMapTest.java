@@ -1,11 +1,14 @@
 package com.benstopford.expiringmap;
 
+import static java.util.concurrent.TimeUnit.HOURS;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.*;
 import static org.hamcrest.core.Is.is;
 import static org.mockito.Mockito.*;
 
 import org.junit.Test;
+
+import java.util.concurrent.TimeUnit;
 
 public class ExpiringMapTest {
     long now;
@@ -14,11 +17,11 @@ public class ExpiringMapTest {
     public void shouldPutAndGetValues() {
 
         //Given
-        ExpiringMap<String, String> map = new ExpiringMap();
+        ExpiringMap<String, String> map = new ExpiringMap<>();
 
         //When
-        map.put("key1", "value1", Long.MAX_VALUE);
-        map.put("key2", "value2", Long.MAX_VALUE);
+        map.put("key1", "value1", HOURS.toMillis(1));
+        map.put("key2", "value2", HOURS.toMillis(1));
 
         //Then
         assertThat(map.get("key1"), is("value1"));
@@ -28,7 +31,7 @@ public class ExpiringMapTest {
     @Test
     public void shouldRemoveEntries() {
         //Given
-        ExpiringMap<String, String> map = new ExpiringMap();
+        ExpiringMap<String, String> map = new ExpiringMap<>();
         map.put("key1", "value1", Long.MAX_VALUE);
 
         //When
@@ -38,10 +41,22 @@ public class ExpiringMapTest {
         assertThat(map.get("key1"), is(nullValue()));
     }
 
+    @Test(expected=IllegalArgumentException.class)
+    public void shouldThrowExceptionForNegativeTimeouts() {
+        new ExpiringMap<String, String>().put("k", "v", -5);
+    }
+
+    @Test
+    public void shouldSupportTimeoutsOfAnyPositiveLong() {
+        ExpiringMap<String, String> map = new ExpiringMap<>();
+        map.put("k", "v", Long.MAX_VALUE);
+        assertThat(map.get("k"), is("v"));
+    }
+
     @Test
     public void shouldNotExpireFutureEntries() {
         //Given
-        ExpiringMap<String, String> map = new ExpiringMap(() -> now);
+        ExpiringMap<String, String> map = new ExpiringMap<>(() -> now);
         now = 0;
         int expiresIn = 10;
         map.put("key1", "value1", expiresIn);
@@ -56,7 +71,7 @@ public class ExpiringMapTest {
     @Test
     public void shouldExpirePastEntries() {
         //Given
-        ExpiringMap<String, String> map = new ExpiringMap(() -> now);
+        ExpiringMap<String, String> map = new ExpiringMap<>(() -> now);
         now = 0;
         int expiresIn = 10;
         map.put("key1", "value1", expiresIn);
@@ -71,7 +86,7 @@ public class ExpiringMapTest {
     @Test
     public void shouldExpireEntriesEqualToExpiryTime() {
         //Given
-        ExpiringMap<String, String> map = new ExpiringMap(() -> now);
+        ExpiringMap<String, String> map = new ExpiringMap<>(() -> now);
         now = 0;
         int expiresIn = 10;
         map.put("key1", "value1", expiresIn);
@@ -86,7 +101,7 @@ public class ExpiringMapTest {
     @Test
     public void shouldRetrieveMultipleValuesWithSameExpiry() {
         //Given
-        ExpiringMap<String, String> map = new ExpiringMap(() -> now);
+        ExpiringMap<String, String> map = new ExpiringMap<>(() -> now);
         now = 0;
 
         //When
@@ -98,11 +113,10 @@ public class ExpiringMapTest {
         assertThat(map.get("key2"), is("value2"));
     }
 
-
     @Test
     public void shouldExpireMultipleValuesWithSameExpiry() {
         //Given
-        ExpiringMap<String, String> map = new ExpiringMap(() -> now);
+        ExpiringMap<String, String> map = new ExpiringMap<>(() -> now);
         now = 0;
 
         //When
@@ -116,11 +130,10 @@ public class ExpiringMapTest {
         assertThat(map.get("key2"), is(nullValue()));
     }
 
-
     @Test
     public void shouldOnlyAttemptExpiryOnValidEntriesForPerformanceReasons() {
         Clock clock = mock(Clock.class);
-        ExpiringMap<Integer, String> map = new ExpiringMap(clock);
+        ExpiringMap<Integer, String> map = new ExpiringMap<>(clock);
         when(clock.now()).thenReturn(100L);
 
         //Given 100 entries
