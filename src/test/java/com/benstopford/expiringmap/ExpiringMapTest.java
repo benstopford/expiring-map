@@ -11,7 +11,8 @@ import org.junit.Test;
 import java.util.concurrent.TimeUnit;
 
 public class ExpiringMapTest {
-    long now;
+    public static final int sleepTime = 1;
+    private long now;
 
     @Test
     public void shouldPutAndGetValues() {
@@ -47,8 +48,13 @@ public class ExpiringMapTest {
 
     @Test
     public void shouldSupportTimeoutsOfAnyPositiveLong() {
+        //Given
         ExpiringMap<String, String> map = new ExpiringMap<>();
+
+        //When
         map.put("k", "v", Long.MAX_VALUE);
+
+        //Then
         assertThat(map.get("k"), is("v"));
     }
 
@@ -68,7 +74,7 @@ public class ExpiringMapTest {
     }
 
     @Test
-    public void shouldExpireEntriesWithPastExpiryTimes() {
+    public void shouldExpireEntriesWithPastExpiryTimes() throws InterruptedException {
         //Given
         ExpiringMap<String, String> map = new ExpiringMap<>(() -> now);
         now = 0;
@@ -78,12 +84,14 @@ public class ExpiringMapTest {
         //When
         now += 11;
 
+        Thread.sleep(sleepTime);
+
         //Then
         assertThat(map.get("key1"), is(nullValue()));
     }
 
     @Test
-    public void shouldExpireEntriesWithEqualExpiryTime() {
+    public void shouldExpireEntriesWithEqualExpiryTime() throws InterruptedException {
         //Given
         ExpiringMap<String, String> map = new ExpiringMap<>(() -> now);
         now = 0;
@@ -92,13 +100,14 @@ public class ExpiringMapTest {
 
         //When
         now += 10;
+        Thread.sleep(sleepTime);
 
         //Then
         assertThat(map.get("key1"), is(nullValue()));
     }
 
     @Test
-    public void shouldRetrieveMultipleValuesWithTheSameExpiry() {
+    public void shouldRetrieveMultipleValuesWithTheSameExpiry() throws InterruptedException {
         ExpiringMap<String, String> map = new ExpiringMap<>(() -> now);
         now = 0;
 
@@ -106,13 +115,15 @@ public class ExpiringMapTest {
         map.put("key1", "value1", 5);
         map.put("key2", "value2", 5);
 
+        Thread.sleep(sleepTime);
+
         //Then
         assertThat(map.get("key1"), is("value1"));
         assertThat(map.get("key2"), is("value2"));
     }
 
     @Test
-    public void shouldExpireMultipleValuesWithSameExpiry() {
+    public void shouldExpireMultipleValuesWithSameExpiry() throws InterruptedException {
         //Given
         ExpiringMap<String, String> map = new ExpiringMap<>(() -> now);
         now = 0;
@@ -123,33 +134,15 @@ public class ExpiringMapTest {
 
         now += 6;
 
+        Thread.sleep(sleepTime);
+
         //Then
         assertThat(map.get("key1"), is(nullValue()));
         assertThat(map.get("key2"), is(nullValue()));
     }
 
     @Test
-    public void shouldOnlyAttemptExpiryOnValidEntriesForPerformanceReasons() {
-        Clock clock = mock(Clock.class);
-        when(clock.now()).thenReturn(0L);
-        ExpiringMap<Integer, String> map = new ExpiringMap<>(clock);
-
-        //Given 100 entries
-        for (int i = 0; i < 100; i++)
-            map.put(i, "value", i);
-
-        reset(clock);
-
-        //When time moves on so five values should expire
-        when(clock.now()).thenReturn(4L);
-        map.get(-1);
-
-        //Then there should only have been five (plus one) comparisons
-        verify(clock, times(6)).now();
-    }
-
-    @Test
-    public void shouldSupportOutOfOrderTimeouts() {
+    public void shouldSupportOutOfOrderTimeouts() throws InterruptedException {
         //Given
         ExpiringMap<String, String> map = new ExpiringMap<>(() -> now);
         now = 0;
@@ -160,6 +153,8 @@ public class ExpiringMapTest {
         map.put("key3", "value3", 15);
 
         now += 7;
+
+        Thread.sleep(sleepTime);
 
         assertThat(map.get("key1"), is("value1"));
         assertThat(map.get("key2"), is(nullValue()));

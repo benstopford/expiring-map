@@ -1,6 +1,8 @@
 package com.benstopford.expiringmap;
 
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.PriorityBlockingQueue;
 
 /**
  * HashMap backed cache that provides configurable expiry.
@@ -18,11 +20,39 @@ import java.util.*;
 
 public class ExpiringMap<K, V> implements ExpireMap<K, V> {
     private Map<K, V> map = new HashMap<>();
-    private Map<Long, List<K>> orderedExpiryTimes = new TreeMap<>();
     private Clock clock;
+    private PriorityBlockingQueue<Object[]> queue = new PriorityBlockingQueue<>(10, (o1, o2) -> {
+        Long t1 = (long) o1[1];
+        Long t2 = (long) o2[1];
+        return t1.compareTo(t2);
+    });
 
     public ExpiringMap(Clock clock) {
         this.clock = clock;
+    }
+
+    boolean started = false;
+
+    private void startPollThread(final Clock clock) {
+        if (started) return;
+        started = true;
+
+        Executors.newSingleThreadExecutor().submit(() -> {
+            try {
+                while (true) {
+                    Object[] entry = queue.take();
+                    long expiryTime = (long) entry[1];
+                    Object key = entry[0];
+                    if (expiryTime <= clock.now()) {
+                        map.remove(key);
+                    } else {
+                        Thread.sleep(expiryTime - clock.now());
+                    }
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     public ExpiringMap() {
@@ -31,7 +61,7 @@ public class ExpiringMap<K, V> implements ExpireMap<K, V> {
 
     @Override
     public synchronized void put(K key, V value, long timeoutMs) {
-        removeExpiredEntries();
+        startPollThread(clock);
 
         recordFutureExpiry(key, timeoutMs);
 
@@ -40,35 +70,17 @@ public class ExpiringMap<K, V> implements ExpireMap<K, V> {
 
     @Override
     public synchronized V get(K key) {
-        removeExpiredEntries();
         return map.get(key);
     }
 
     @Override
     public synchronized void remove(K key) {
-        removeExpiredEntries();
         map.remove(key);
-    }
-
-    private void removeExpiredEntries() {
-        for (long expiry : orderedExpiryTimes.keySet()) {
-            if (expiry <= clock.now()) {
-                orderedExpiryTimes.get(expiry)
-                        .forEach(map::remove);
-            } else break; //all subsequent entries will be in the future
-        }
     }
 
     private void recordFutureExpiry(K entryKey, long timeoutMs) {
         long expiryTime = getExpiryTime(timeoutMs);
-
-        List<K> existingKeys = orderedExpiryTimes.get(expiryTime);
-
-        if (existingKeys == null)
-            existingKeys = new ArrayList<>();
-        existingKeys.add(entryKey);
-
-        orderedExpiryTimes.put(expiryTime, existingKeys);
+        queue.add(new Object[]{entryKey, expiryTime});
     }
 
     private long getExpiryTime(long timeoutMs) {
