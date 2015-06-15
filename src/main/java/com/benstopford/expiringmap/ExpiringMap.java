@@ -7,7 +7,7 @@ import java.util.*;
  *
  * Entries will be validated for expiry on any action of the interface.
  *
- * Expiry times for each entry are held chronologically so that only
+ * Expiry times for each entry are held IN chronological order so that only
  * entries that require expiry will be examined on any operation against
  * this map.
  *
@@ -62,7 +62,6 @@ public class ExpiringMap<K, V> implements ExpireMap<K, V> {
     }
 
     private void flagForFutureExpiry(K entryKey, long timeoutMs) {
-
         if (timeoutMs < 0)
             throw new IllegalArgumentException("Timeout must be a positive value");
 
