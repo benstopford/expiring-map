@@ -53,7 +53,7 @@ public class ExpiringMapTest {
     }
 
     @Test
-    public void shouldNotExpireFutureEntries() {
+    public void shouldNotExpireEntriesWithFutureExpiryTimes() {
         //Given
         ExpiringMap<String, String> map = new ExpiringMap<>(() -> now);
         now = 0;
@@ -68,7 +68,7 @@ public class ExpiringMapTest {
     }
 
     @Test
-    public void shouldExpirePastEntries() {
+    public void shouldExpireEntriesWithPastExpiryTimes() {
         //Given
         ExpiringMap<String, String> map = new ExpiringMap<>(() -> now);
         now = 0;
@@ -83,7 +83,7 @@ public class ExpiringMapTest {
     }
 
     @Test
-    public void shouldExpireEntriesEqualToExpiryTime() {
+    public void shouldExpireEntriesWithEqualExpiryTime() {
         //Given
         ExpiringMap<String, String> map = new ExpiringMap<>(() -> now);
         now = 0;
@@ -98,12 +98,11 @@ public class ExpiringMapTest {
     }
 
     @Test
-    public void shouldRetrieveMultipleValuesWithSameExpiry() {
-        //Given
+    public void shouldRetrieveMultipleValuesWithTheSameExpiry() {
         ExpiringMap<String, String> map = new ExpiringMap<>(() -> now);
         now = 0;
 
-        //When
+        //Given both expire in same ms
         map.put("key1", "value1", 5);
         map.put("key2", "value2", 5);
 
