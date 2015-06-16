@@ -19,8 +19,7 @@ public class ExpiryService<K> {
         long waitTime = head.expiry() - clock.now();
         queue.offer(head);
         synchronized (WaitService.class) {
-            //ensure head has not been replaced (with more immanently expiring value) before entering wait
-            if (waitTime > 0 && queue.peek().key().equals(head.key()))
+            if (waitTime > 0 && queue.peek().key().equals(head.key())) //ensure head has not been replaced
                 waitService.doWait(ms(waitTime), ns(waitTime));
         }
     }
