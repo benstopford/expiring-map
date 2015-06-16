@@ -31,18 +31,18 @@ block, before going into wait. This sits in tension with the blocking take() met
 ###Notes on Requirements
 
 ####1. Write clean, simple, correct code.
-I tried to keep it simple. The cache is two functional classes. The Map itself and an Expiry Service. A unit test for each
-and a small acceptance test that links it all together for the happy path only. 
+The cache is two useful classes. The Map itself and an Expiry Service. There are unit tests and a small acceptance test 
+that links it all together for the happy path only. 
  
 ####2. The ExpireMap interface may be called concurrently by multiple threads.
-The interface includes synchronization. There is a (probably slightly superfluous) test for this.
+The interface includes synchronization. There is a test for this  (somewhat superfluous) .
 
 ####3. ExpireMap should only take space proportional to the current number of entries in it.
 Each not-expired entry in the map will consume space for a single hashmap entry (key and value) as well as an additional 
 ExpiryEntry. The Expiry entry has a fixed overhead of an additional pointer to the key and a long for the expiry time
 along with overhead for the data structure itself. 
 
-####4. The timeout should be enforced as accurately as the underlying operating system allows. 5. Write the code in java or C++. If in java, it's ok to use data structures in java collections, but try to avoid using any of the built-in schedulers.
+####4. The timeout should be enforced as accurately as the underlying operating system allows. Write the code in java or C++. If in java, it's ok to use data structures in java collections, but try to avoid using any of the built-in schedulers.
 The ExpiringMap uses nanotime to track elapsed time between the entry being inserted and its expiry. This is coupled
 with nanosecond control on a the wait() method used to pause the expiry process when it is not required.  
 
@@ -52,6 +52,7 @@ operations are performed on the worker thread. There is a small basic performanc
 reasonable performance for small batches of inserts and expiries.  
 
 ####7. Write a few unit tests.
+should be plenty
 
 ####8. Complete the assignment in 2 days.
 
