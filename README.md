@@ -8,14 +8,14 @@ Eviction is automatically scheduled using a background thread.
 
 
 ###Notes on the Implementation
-As data is written to the ExpiryMap entries recording the expiry time are placed on a PriorityQueue. The queue is ordered 
-by the entries expiry time so items expiring soonest move to the head of the queue. 
+As data is written to the ExpiryMap, entries recording the expiry time are placed on a PriorityQueue. The queue is ordered 
+by the entry's expiry time so items expiring soonest move to the head of the queue. 
 
-A separate thread is used to read expiry entries from the queue. If the expiry time of the most recent entry is in the 
-future the thread waits for this expiry time. 
+A separate thread polls the queue. If the expiry time of the most recent entry is in the future the thread waits for this 
+expiry time to arrive. Once this time arrives the key will be removed (expired from the cache)
 
-Should a new entry be put into the map whilst the expiry thread is blocked the thread is notified, picks up the new 
-expiry time, then goes back into a waiting state. 
+Should a new entry be put into the map whilst the expiry thread is blocked, the thread will be woken (notified), the new 
+entry will be picked up, the thread will wait for this new item to expire. 
 
 
 ###Further optimisations
