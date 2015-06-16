@@ -18,12 +18,10 @@ public class ExpiryService<K> {
     private void waitForItToExpire(Clock clock, WaitService waitService, BlockingQueue<ExpiryEntry<K>> queue, ExpiryEntry head) throws InterruptedException {
         long waitTime = head.expiry() - clock.now();
         queue.offer(head);
-        if (waitTime > 0) {
-            synchronized (WaitService.class) {
-                //ensure head has not been replaced (with more immanently expiring value) before entering wait
-                if (queue.peek().key().equals(head.key()))
-                    waitService.doWait(ms(waitTime), ns(waitTime));
-            }
+        synchronized (WaitService.class) {
+            //ensure head has not been replaced (with more immanently expiring value) before entering wait
+            if (waitTime > 0 && queue.peek().key().equals(head.key()))
+                waitService.doWait(ms(waitTime), ns(waitTime));
         }
     }
 
