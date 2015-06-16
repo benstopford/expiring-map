@@ -17,15 +17,21 @@ public class ExpiryService<K> {
 
     private void waitForItToExpire(Clock clock, WaitService waitService, BlockingQueue<ExpiryEntry<K>> queue, ExpiryEntry head) throws InterruptedException {
         long waitTime = head.expiry() - clock.now();
-        queue.offer(head); //put it back before we wait
+        queue.offer(head);
         if (waitTime > 0) {
-            long ms = (long) Math.floor(waitTime / 1000000);
-            int ns = (int) Math.floor(waitTime % 1000000);
             synchronized (WaitService.class) {
                 //ensure head has not been replaced (with more immanently expiring value) before entering wait
                 if (queue.peek().key().equals(head.key()))
-                    waitService.doWait(ms, ns);
+                    waitService.doWait(ms(waitTime), ns(waitTime));
             }
         }
+    }
+
+    private int ns(long waitTime) {
+        return (int) Math.floor(waitTime % 1000000);
+    }
+
+    private long ms(long waitTime) {
+        return (long) Math.floor(waitTime / 1000000);
     }
 }
