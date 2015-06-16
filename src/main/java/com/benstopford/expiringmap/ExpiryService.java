@@ -15,8 +15,8 @@ public class ExpiryService<K> {
             if (nanos > 0) {
                 long ms = (long) Math.floor(nanos / 1000000);
                 int ns = (int) Math.floor(nanos % 1000000);
-                synchronized(waitService) {
-                    waitService.wait(waitService, ms, ns);
+                synchronized(WaitService.class) {  //TODO put this inside the wiat service
+                    waitService.doWait(ms, ns);
                 }
             }
         }

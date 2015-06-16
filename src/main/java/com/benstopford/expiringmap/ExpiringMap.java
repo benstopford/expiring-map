@@ -28,9 +28,7 @@ public class ExpiringMap<K, V> implements ExpireMap<K, V> {
     }
 
     public ExpiringMap(Clock clock) {
-        this(clock, (monitor, ms, ns) -> {
-            monitor.wait(ms, ns);
-        });
+        this(clock, WaitService.DEFAULT);
     }
 
     public ExpiringMap(Clock clock, WaitService waitService) {
@@ -40,17 +38,13 @@ public class ExpiringMap<K, V> implements ExpireMap<K, V> {
     }
 
     private void startExpiryService(final Clock clock, final WaitService waitService) {
-        Executors.newSingleThreadExecutor().submit(new Runnable() {
-            ExpiryService service = new ExpiryService<K>();
-
-            @Override
-            public void run() {
-                while (true) {
-                    try {
-                        service.attemptExpiry(clock, waitService, queue, backingMap);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+        final ExpiryService service = new ExpiryService<K>();
+        Executors.newSingleThreadExecutor().submit((Runnable) () -> {
+            while (true) {
+                try {
+                    service.attemptExpiry(clock, waitService, queue, backingMap);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
             }
         });
@@ -70,9 +64,9 @@ public class ExpiringMap<K, V> implements ExpireMap<K, V> {
     }
 
     private void wakeEvictionIfEarlierEntry(long expiryTime) {
-        if (queue.peek() != null && expiryTime < queue.peek().expiry()) {
-            synchronized (waitService) {
-                notifyAll();
+        if (queue.peek() != null && expiryTime <= queue.peek().expiry()) {
+            synchronized (WaitService.class) {
+                WaitService.class.notifyAll();
             }
         }
     }
@@ -90,6 +84,10 @@ public class ExpiringMap<K, V> implements ExpireMap<K, V> {
     @Override
     public synchronized void remove(K key) {
         backingMap.remove(key);
+    }
+
+    public int queueSize(){
+        return queue.size();
     }
 
 }

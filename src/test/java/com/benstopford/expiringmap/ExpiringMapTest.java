@@ -9,7 +9,7 @@ import static org.mockito.Mockito.*;
 
 import org.junit.Test;
 
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.CountDownLatch;
 
 public class ExpiringMapTest {
     public static final int sleepTime = 100;
@@ -48,7 +48,7 @@ public class ExpiringMapTest {
     }
 
     @Test
-    public void shouldSupportTimeoutsOfAnyPositiveLong() {
+    public void shouldSupportTimeoutsOfLargePositiveLong() {
         //Given
         ExpiringMap<String, String> map = new ExpiringMap<>();
 
@@ -60,7 +60,7 @@ public class ExpiringMapTest {
     }
 
     @Test
-    public void shouldNotExpireEntriesWithFutureExpiryTimes() {
+    public void shouldNotExpireEntriesWithFutureExpiryTimes() throws InterruptedException {
         //Given
         ExpiringMap<String, String> map = new ExpiringMap<>(() -> now);
         now = 0;
@@ -69,6 +69,8 @@ public class ExpiringMapTest {
 
         //When
         now += MILLISECONDS.toNanos(5);
+
+        letQueueDrainToZero(map);
 
         //Then
         assertThat(map.get("key1"), is("value1"));
@@ -85,7 +87,7 @@ public class ExpiringMapTest {
         //When
         now += MILLISECONDS.toNanos(11);
 
-        Thread.sleep(sleepTime);
+        letQueueDrainToZero(map);
 
         //Then
         assertThat(map.get("key1"), is(nullValue()));
@@ -101,7 +103,8 @@ public class ExpiringMapTest {
 
         //When
         now += MILLISECONDS.toNanos(10);
-        Thread.sleep(sleepTime);
+
+        letQueueDrainToZero(map);
 
         //Then
         assertThat(map.get("key1"), is(nullValue()));
@@ -116,7 +119,7 @@ public class ExpiringMapTest {
         map.put("key1", "value1", 5);
         map.put("key2", "value2", 5);
 
-        Thread.sleep(sleepTime);
+        letQueueDrainToSize(2, map);
 
         //Then
         assertThat(map.get("key1"), is("value1"));
@@ -135,7 +138,7 @@ public class ExpiringMapTest {
 
         now += 6 * 1000000;
 
-        Thread.sleep(1000);
+        letQueueDrainToZero(map);
 
         //Then
         assertThat(map.get("key1"), is(nullValue()));
@@ -155,13 +158,12 @@ public class ExpiringMapTest {
 
         now += MILLISECONDS.toNanos(7);
 
-        Thread.sleep(sleepTime);
+        letQueueDrainToSize(2, map);
 
         assertThat(map.get("key1"), is("value1"));
         assertThat(map.get("key2"), is(nullValue()));
         assertThat(map.get("key3"), is("value3"));
     }
-
 
     @Test
     public void shouldWaitIfExpiryTimeIsNotReached() throws Exception {
@@ -176,35 +178,40 @@ public class ExpiringMapTest {
 
         now = 1600000;
 
-        Thread.sleep(sleepTime);
+        letQueueDrainToZero(map);
 
-        verify(waitService, atLeastOnce()).wait(waitService, 3, 400000);
+        verify(waitService, atLeastOnce()).doWait(3, 400000);
 
     }
 
 
     @Test
     public void shouldWakeEvictionThreadWhenEarlierExpiringEntryArrives() throws InterruptedException {
+
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+        WaitService countingWaitService = (ms, ns) -> {
+            countDownLatch.countDown();
+            WaitService.DEFAULT.doWait(ms, ns);
+        };
+
         //Given
-        ExpiringMap<String, String> map = new ExpiringMap<>(() -> now);
+        ExpiringMap<String, String> map = new ExpiringMap<>(() -> now, countingWaitService);
         now = 0;
 
         //When
         map.put("key1", "value1", 25);
 
+        //wait for eviction thread to go into wait
+        countDownLatch.await();
 
-        Thread.sleep(sleepTime);
-
-        //eviction thread should now be sleeping
-
-        //adding value with shorter expiry - this should cause the eviction thread to wake
+        //add value with shorter expiry - this should cause the eviction thread to wake
         map.put("key2", "value2", 1);
         assertThat(map.get("key2"), is("value2"));
 
         //bump time forward a ms so that key2 expires
-        now += 1 * 1000000;
+        now += 1000000;
 
-        Thread.sleep(sleepTime); //let evictino run
+        letQueueDrainToSize(1, map);
 
         //key2 should have been evicted
         assertThat(map.get("key2"), is(nullValue()));
@@ -228,9 +235,9 @@ public class ExpiringMapTest {
 
         map.put("key2", "value2", 1);
 
-        now+=999999; //bump forward to 1ms (so key1 should evict but not key2)
+        now += 999999; //bump forward to 1ms (so key1 should evict but not key2)
 
-        Thread.sleep(sleepTime);
+        letQueueDrainToSize(1, map);
 
         //first shoudl have been evicted
         assertThat(map.get("key1"), is(nullValue()));
@@ -238,10 +245,24 @@ public class ExpiringMapTest {
 
         now += 1; //bump time by 1ns
 
-        Thread.sleep(sleepTime);
+        letQueueDrainToZero(map);
 
         //second should now evict
         assertThat(map.get("key2"), is(nullValue()));
+    }
+
+    private void letQueueDrainToSize(int toSize, ExpiringMap<String, String> map) throws InterruptedException {
+        int count = 0;
+        while (map.queueSize() > toSize) {
+            Thread.sleep(1);
+            if (count++ > 2000)
+                throw new RuntimeException("Queue took more than 2s to drain. Current size: " + map.queueSize());
+        }
+    }
+
+
+    private void letQueueDrainToZero(ExpiringMap<String, String> map) throws InterruptedException {
+        letQueueDrainToSize(0, map);
     }
 
 }
