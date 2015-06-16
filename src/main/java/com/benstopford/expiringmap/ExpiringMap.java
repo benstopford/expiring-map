@@ -1,97 +1,95 @@
 package com.benstopford.expiringmap;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.PriorityBlockingQueue;
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * HashMap backed cache that provides configurable expiry.
  * <p>
- * Expired entries will be removed when any method on the <tt>ExpireMap</tt> interface
- * is invoked.
- * <p>
- * Expiry times for each entry are held in chronological order so that only
- * entries that require expiry will be examined on any operation against
- * this map.
  *
  * @param <K> the type of keys maintained by this map
  * @param <V> the type of mapped values
  */
 
 public class ExpiringMap<K, V> implements ExpireMap<K, V> {
-    private Map<K, V> map = new HashMap<>();
+    private Map<K, V> backingMap = new ConcurrentHashMap<>();
     private Clock clock;
-    private PriorityBlockingQueue<Object[]> queue = new PriorityBlockingQueue<>(10, (o1, o2) -> {
-        Long t1 = (long) o1[1];
-        Long t2 = (long) o2[1];
-        return t1.compareTo(t2);
-    });
+    private WaitService waitService;
+    private PriorityBlockingQueue<ExpiryEntry<K>> queue = new PriorityBlockingQueue<>(
+            10, (e1, e2) -> e1.expiry().compareTo(e2.expiry()));
 
-    public ExpiringMap(Clock clock) {
-        this.clock = clock;
+
+    public ExpiringMap() {
+        this(System::nanoTime);
     }
 
-    boolean started = false;
+    public ExpiringMap(Clock clock) {
+        this(clock, (monitor, ms, ns) -> {
+            monitor.wait(ms, ns);
+        });
+    }
 
-    private void startPollThread(final Clock clock) {
-        if (started) return;
-        started = true;
+    public ExpiringMap(Clock clock, WaitService waitService) {
+        this.clock = clock;
+        this.waitService = waitService;
+        startExpiryService(clock, waitService);
+    }
 
-        Executors.newSingleThreadExecutor().submit(() -> {
-            try {
+    private void startExpiryService(final Clock clock, final WaitService waitService) {
+        Executors.newSingleThreadExecutor().submit(new Runnable() {
+            ExpiryService service = new ExpiryService<K>();
+
+            @Override
+            public void run() {
                 while (true) {
-                    Object[] entry = queue.take();
-                    long expiryTime = (long) entry[1];
-                    Object key = entry[0];
-                    if (expiryTime <= clock.now()) {
-                        map.remove(key);
-                    } else {
-                        Thread.sleep(expiryTime - clock.now());
+                    try {
+                        service.attemptExpiry(clock, waitService, queue, backingMap);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
                     }
                 }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
             }
         });
     }
 
-    public ExpiringMap() {
-        this(System::currentTimeMillis);
-    }
-
     @Override
     public synchronized void put(K key, V value, long timeoutMs) {
-        startPollThread(clock);
+        validate(timeoutMs);
 
-        recordFutureExpiry(key, timeoutMs);
+        long expiryTime = clock.now() + MILLISECONDS.toNanos(timeoutMs);
 
-        map.put(key, value);
+        queue.add(new ExpiryEntry<>(expiryTime, key));
+
+        wakeEvictionIfEarlierEntry(expiryTime);
+
+        backingMap.put(key, value);
+    }
+
+    private void wakeEvictionIfEarlierEntry(long expiryTime) {
+        if (queue.peek() != null && expiryTime < queue.peek().expiry()) {
+            synchronized (waitService) {
+                notifyAll();
+            }
+        }
+    }
+
+    private void validate(long timeoutMs) {
+        if (timeoutMs < 0)
+            throw new IllegalArgumentException("Timeout must be a positive value");
     }
 
     @Override
     public synchronized V get(K key) {
-        return map.get(key);
+        return backingMap.get(key);
     }
 
     @Override
     public synchronized void remove(K key) {
-        map.remove(key);
+        backingMap.remove(key);
     }
 
-    private void recordFutureExpiry(K entryKey, long timeoutMs) {
-        long expiryTime = getExpiryTime(timeoutMs);
-        queue.add(new Object[]{entryKey, expiryTime});
-    }
-
-    private long getExpiryTime(long timeoutMs) {
-        if (timeoutMs < 0)
-            throw new IllegalArgumentException("Timeout must be a positive value");
-
-        long expiryTime = clock.now() + timeoutMs;
-
-        if (expiryTime < 0)
-            expiryTime = Long.MAX_VALUE;
-
-        return expiryTime;
-    }
 }
