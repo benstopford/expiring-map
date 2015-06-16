@@ -39,7 +39,7 @@ public class ExpiringMap<K, V> implements ExpireMap<K, V> {
 
     private void startExpiryService(final Clock clock, final WaitService waitService) {
         final ExpiryService service = new ExpiryService<K>();
-        Executors.newSingleThreadExecutor().submit((Runnable) () -> {
+        Thread thread = new Thread(() -> {
             while (true) {
                 try {
                     service.attemptExpiry(clock, waitService, queue, backingMap);
@@ -48,6 +48,8 @@ public class ExpiringMap<K, V> implements ExpireMap<K, V> {
                 }
             }
         });
+        thread.setDaemon(true);
+        thread.start();
     }
 
     @Override
@@ -64,7 +66,8 @@ public class ExpiringMap<K, V> implements ExpireMap<K, V> {
     }
 
     private void wakeEvictionIfEarlierEntry(long expiryTime) {
-        if (queue.peek() != null && expiryTime <= queue.peek().expiry()) {
+        ExpiryEntry<K> head = queue.peek();
+        if (head != null && expiryTime <= head.expiry()) {
             waitService.doNotify();
         }
     }

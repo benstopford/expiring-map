@@ -18,6 +18,10 @@ Should a new entry be put into the map whilst the expiry thread is blocked the t
 expiry time, then goes back into a waiting state. 
 
 
+###Further optimisations
+- Each put() request peeks at the expiry queue as well as adding to it. The peak could be cached using a field containing 
+the next expiring value. This feels like over optimisation without a concrete driver.  
+
 
 ###Notes on Requirements
 

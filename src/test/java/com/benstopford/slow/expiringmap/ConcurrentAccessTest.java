@@ -1,5 +1,6 @@
-package com.benstopford.expiringmap;
+package com.benstopford.slow.expiringmap;
 
+import com.benstopford.expiringmap.ExpiringMap;
 import org.junit.Test;
 
 import java.util.concurrent.ExecutorService;

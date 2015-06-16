@@ -1,4 +1,6 @@
-package com.benstopford.expiringmap;
+package com.benstopford.slow.expiringmap;
+
+import com.benstopford.expiringmap.ExpiringMap;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
