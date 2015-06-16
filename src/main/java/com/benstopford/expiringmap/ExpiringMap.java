@@ -12,6 +12,12 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * HashMap backed cache that provides configurable expiry.
  * <p>
  *
+ * Expiry times, along with the entry's key, are added to a priority
+ * queue, ensuring the next entry to expire will be at the head.
+ * A separate thread consumes the queue and deletes expired
+ * entries. The thread waits if there is nothing to consume and will
+ * be notified if fresher items are added.
+ *
  * @param <K> the type of keys maintained by this map
  * @param <V> the type of mapped values
  */
