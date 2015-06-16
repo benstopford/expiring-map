@@ -1,11 +1,13 @@
-package com.benstopford.expiringmap;
+package com.benstopford.expiringmap.util;
+
+import com.benstopford.expiringmap.WaitService;
 
 import java.util.concurrent.CountDownLatch;
 
-public class CountDownWaitService implements WaitService{
+public class CountDownWaitService implements WaitService {
     private CountDownLatch latch;
 
-    CountDownWaitService(CountDownLatch latch){
+    public CountDownWaitService(CountDownLatch latch){
         this.latch = latch;
     }
     @Override

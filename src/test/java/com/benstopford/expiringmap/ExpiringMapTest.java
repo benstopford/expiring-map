@@ -5,8 +5,8 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.*;
 import static org.hamcrest.core.Is.is;
-import static org.mockito.Mockito.*;
 
+import com.benstopford.expiringmap.util.CountDownWaitService;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
@@ -196,7 +196,6 @@ public class ExpiringMapTest {
         //When
         map.put("key1", "value1", 25);
 
-        //wait for eviction thread to go into wait
         latch.await();
 
         //add value with shorter expiry - this should cause the eviction thread to wake
@@ -217,31 +216,34 @@ public class ExpiringMapTest {
 
 
     @Test
-    public void shouldEvictBasedOnNsDifferencesInTime() throws InterruptedException {
-        //Given
+    public void shouldEvictBasedOnNanosecondDifferencesInTime() throws InterruptedException {
         ExpiringMap<String, String> map = new ExpiringMap<>(() -> now);
         now = 0;
 
-        //When
+        //Given we have two entries, 1 nanosecond apart
         map.put("key1", "value1", 1);
 
-        now += 1; //bump time by 2ns
+        now += 1;
 
         map.put("key2", "value2", 1);
 
-        now += 999999; //bump forward to 1ms (so key1 should evict but not key2)
+
+        //When we move forward to 1ms
+        now += 999999;
 
         waitForKeyToBeRemoved("key1", map);
 
-        //first should have been evicted
+        //Then the first should have been evicted
         assertThat(map.get("key1"), is(nullValue()));
         assertThat(map.get("key2"), is("value2"));
 
+
+        //When we bump a single nanosecond forward
         now += 1; //bump time by 1ns
 
         waitForKeyToBeRemoved("key2", map);
 
-        //second should now evict
+        //Then the second should evict
         assertThat(map.get("key2"), is(nullValue()));
     }
 
