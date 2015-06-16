@@ -35,12 +35,12 @@ public class ExpiringMap<K, V> implements ExpireMap<K, V> {
     public ExpiringMap(Clock clock, WaitService waitService) {
         this.clock = clock;
         this.waitService = waitService;
-        startExpiryService(clock, waitService);
+        startExpiryService();
     }
 
-    private void startExpiryService(final Clock clock, final WaitService waitService) {
-        final ExpiryService service = new ExpiryService<K>();
+    private void startExpiryService() {
         Thread thread = new Thread(() -> {
+            ExpiryService service = new ExpiryService<K>();
             while (true) {
                 try {
                     service.attemptExpiry(clock, waitService, queue, backingMap);
