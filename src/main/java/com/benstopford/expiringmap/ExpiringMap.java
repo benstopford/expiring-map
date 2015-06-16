@@ -84,4 +84,7 @@ public class ExpiringMap<K, V> implements ExpireMap<K, V> {
         backingMap.remove(key);
     }
 
+    public int size() {
+        return backingMap.size();
+    }
 }

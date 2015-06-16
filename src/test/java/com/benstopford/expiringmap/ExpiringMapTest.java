@@ -221,11 +221,8 @@ public class ExpiringMapTest {
 
         //Given we have two entries, 1 nanosecond apart
         map.put("key1", "value1", 1);
-
         now += 1;
-
         map.put("key2", "value2", 1);
-
 
         //When we move forward to 1ms
         now += 999999;
@@ -236,9 +233,8 @@ public class ExpiringMapTest {
         assertThat(map.get("key1"), is(nullValue()));
         assertThat(map.get("key2"), is("value2"));
 
-
         //When we bump a single nanosecond forward
-        now += 1; //bump time by 1ns
+        now += 1;
 
         waitForKeyToBeRemoved("key2", map);
 

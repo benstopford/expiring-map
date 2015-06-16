@@ -29,7 +29,6 @@ public class ExpiryServiceTest {
         map = mock(Map.class);
     }
 
-
     @Test
     public void shouldRemoveValueIfItExpiresInThePast() throws InterruptedException {
 
