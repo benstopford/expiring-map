@@ -11,7 +11,7 @@ public class ExpiryService<K> {
                 backingMap.remove(entry.key());
             } else {
                 long nanos = entry.expiry() - clock.now();
-                queue.put(entry); //put it back before we sleep
+                queue.offer(entry); //put it back before we wait
                 if (nanos > 0) {
                     long ms = (long) Math.floor(nanos / 1000000);
                     int ns = (int) Math.floor(nanos % 1000000);
