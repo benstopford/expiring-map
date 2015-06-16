@@ -4,16 +4,12 @@ public interface WaitService {
     public WaitService DEFAULT = new WaitService() {
         @Override
         public void doWait(long ms, int ns) throws InterruptedException {
-            synchronized(WaitService.class) {
-                WaitService.class.wait(ms, ns);
-            }
+            WaitService.class.wait(ms, ns);
         }
 
         @Override
         public void doNotify() {
-            synchronized (WaitService.class) {
-                WaitService.class.notifyAll();
-            }
+            WaitService.class.notifyAll();
         }
     };
 

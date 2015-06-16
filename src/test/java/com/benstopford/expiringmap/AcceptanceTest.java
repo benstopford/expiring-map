@@ -12,7 +12,7 @@ public class AcceptanceTest {
 
 
     @Test
-    public void shouldExpireBatchOfValuesInAllotedTime() throws InterruptedException {
+    public void shouldExpireBatchOfValuesInAlotedTime() throws InterruptedException {
         ExpiringMap<Integer, String> map = new ExpiringMap<>();
 
         int expiry = 1000;

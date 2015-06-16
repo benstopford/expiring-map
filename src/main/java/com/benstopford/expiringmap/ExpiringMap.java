@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -68,7 +69,9 @@ public class ExpiringMap<K, V> implements ExpireMap<K, V> {
     private void wakeEvictionIfEarlierEntry(long expiryTime) {
         ExpiryEntry<K> head = queue.peek();
         if (head != null && expiryTime <= head.expiry()) {
-            waitService.doNotify();
+            synchronized (WaitService.class) {
+                waitService.doNotify();
+            }
         }
     }
 
