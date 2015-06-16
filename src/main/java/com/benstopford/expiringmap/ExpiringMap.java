@@ -44,7 +44,7 @@ public class ExpiringMap<K, V> implements ExpireMap<K, V> {
                 try {
                     service.attemptExpiry(clock, waitService, queue, backingMap);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    throw new RuntimeException(e);
                 }
             }
         });

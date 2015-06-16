@@ -2,7 +2,6 @@ package com.benstopford.expiringmap;
 
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.locks.ReentrantLock;
 
 public class ExpiryService<K> {
 

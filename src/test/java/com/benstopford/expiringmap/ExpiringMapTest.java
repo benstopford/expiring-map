@@ -12,7 +12,6 @@ import org.junit.Test;
 import java.util.concurrent.CountDownLatch;
 
 public class ExpiringMapTest {
-    public static final int sleepTime = 100;
     private long now;
 
     @Test
