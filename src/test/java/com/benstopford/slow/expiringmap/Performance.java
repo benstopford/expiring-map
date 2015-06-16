@@ -16,7 +16,7 @@ public class Performance {
         ExpiringMap<Integer, String> map = new ExpiringMap<>();
 
         int expiry = 5000;
-        int numEntries = 1000000;
+        int numEntries = 100;
 
         long insertStart = System.nanoTime();
         for (int i = 0; i < numEntries; i++) {

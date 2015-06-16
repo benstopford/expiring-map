@@ -7,6 +7,11 @@ import com.benstopford.expiringmap.util.WaitService;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 
+/**
+ * Class responsible for the expiry logic.
+ *
+ * @param <K>
+ */
 public class ExpiryService<K> {
 
     public void attemptExpiry(Clock clock, WaitService waitService, BlockingQueue<ExpiryEntry<K>> queue, Map<K, ?> backingMap) throws InterruptedException {

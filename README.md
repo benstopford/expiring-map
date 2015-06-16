@@ -22,6 +22,11 @@ expiry time, then goes back into a waiting state.
 - Each put() request peeks at the expiry queue as well as adding to it. The peak could be cached using a field containing 
 the next expiring value. This feels like over optimisation without a concrete driver.  
 
+- The Expiry Service trades some performance for simplicity, notably a second traversal of the queue inside the synchronised
+block, before going into wait. This sits in tension with the blocking take() method that retrieves the next item from the 
+ queue and the notify call which can occurs during a put if a more freshly expiring item arrives. This method could be 
+ tweaked to better suit a specific use case that favoured either write or expiry performance. 
+
 
 ###Notes on Requirements
 
@@ -43,7 +48,8 @@ with nanosecond control on a the wait() method used to pause the expiry process 
 
 ####6. Try to be efficient in the big O time of each of three methods in the interface.
 Expiry code only affects the put method, synchronously. This uses a priority queue so is log(n) time for insert. All other
- operations are performed on the worker thread.
+operations are performed on the worker thread. There is a small basic performance test (Performance.java). This shows 
+reasonable performance for small batches of inserts and expiries.  
 
 ####7. Write a few unit tests.
 
