@@ -1,4 +1,4 @@
-package com.benstopford.expiringmap;
+package com.benstopford.expiringmap.util;
 
 public interface WaitService {
     public WaitService DEFAULT = new WaitService() {

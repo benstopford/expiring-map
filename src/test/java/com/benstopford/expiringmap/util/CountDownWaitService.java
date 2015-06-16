@@ -1,7 +1,5 @@
 package com.benstopford.expiringmap.util;
 
-import com.benstopford.expiringmap.WaitService;
-
 import java.util.concurrent.CountDownLatch;
 
 public class CountDownWaitService implements WaitService {

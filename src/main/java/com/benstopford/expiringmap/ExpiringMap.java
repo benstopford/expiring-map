@@ -1,10 +1,12 @@
 package com.benstopford.expiringmap;
 
+import com.benstopford.expiringmap.util.Clock;
+import com.benstopford.expiringmap.util.ExpiryEntry;
+import com.benstopford.expiringmap.util.WaitService;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
 import java.util.concurrent.PriorityBlockingQueue;
-import java.util.concurrent.locks.ReentrantLock;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 

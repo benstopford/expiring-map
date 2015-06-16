@@ -1,9 +1,11 @@
 package com.benstopford.expiringmap;
 
-import static org.junit.Assert.*;
 import static org.hamcrest.core.Is.is;
 import static org.mockito.Mockito.*;
 
+import com.benstopford.expiringmap.util.Clock;
+import com.benstopford.expiringmap.util.ExpiryEntry;
+import com.benstopford.expiringmap.util.WaitService;
 import org.junit.Before;
 import org.junit.Test;
 

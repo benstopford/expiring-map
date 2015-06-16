@@ -1,5 +1,9 @@
 package com.benstopford.expiringmap;
 
+import com.benstopford.expiringmap.util.Clock;
+import com.benstopford.expiringmap.util.ExpiryEntry;
+import com.benstopford.expiringmap.util.WaitService;
+
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 
