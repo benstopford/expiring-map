@@ -3,11 +3,11 @@ package com.benstopford.expiringmap;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
-public class PerformanceTest {
+public class Performance {
 
 
     public static void main(String[] args) {
-        new PerformanceTest().run();
+        new Performance().run();
     }
 
     public void run() {
