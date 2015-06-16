@@ -61,6 +61,7 @@ public class ExpiryServiceTest {
         long now = 5L;
         long expiry = 6;
         when(queue.take()).thenReturn(new ExpiryEntry<>(expiry, "key1"));
+        when(queue.peek()).thenReturn(new ExpiryEntry<>(expiry, "key1"));
         when(clock.now()).thenReturn(now);
 
         service.attemptExpiry(clock, waitService, queue, map);
@@ -74,6 +75,7 @@ public class ExpiryServiceTest {
         long now = 1 * ms;
         long expiry = 2 * ms;
         when(queue.take()).thenReturn(new ExpiryEntry<>(expiry, "key1"));
+        when(queue.peek()).thenReturn(new ExpiryEntry<>(expiry, "key1"));
         when(clock.now()).thenReturn(now);
 
         service.attemptExpiry(clock, waitService, queue, map);
@@ -87,6 +89,7 @@ public class ExpiryServiceTest {
         long now = 2 * ms;
         long expiry = 12 * ms;
         when(queue.take()).thenReturn(new ExpiryEntry<>(expiry, "key1"));
+        when(queue.peek()).thenReturn(new ExpiryEntry<>(expiry, "key1"));
         when(clock.now()).thenReturn(now);
 
         service.attemptExpiry(clock, waitService, queue, map);
@@ -100,6 +103,7 @@ public class ExpiryServiceTest {
         long now = 1 * ms + 50 * us;
         long expiry = 1 * ms + 100 * us;
         when(queue.take()).thenReturn(new ExpiryEntry<>(expiry, "key1"));
+        when(queue.peek()).thenReturn(new ExpiryEntry<>(expiry, "key1"));
         when(clock.now()).thenReturn(now);
 
         service.attemptExpiry(clock, waitService, queue, map);
@@ -113,6 +117,7 @@ public class ExpiryServiceTest {
         long now = 1 * ms + 50;
         long expiry = 1 * ms + 100;
         when(queue.take()).thenReturn(new ExpiryEntry<>(expiry, "key1"));
+        when(queue.peek()).thenReturn(new ExpiryEntry<>(expiry, "key1"));
         when(clock.now()).thenReturn(now);
 
         service.attemptExpiry(clock, waitService, queue, map);

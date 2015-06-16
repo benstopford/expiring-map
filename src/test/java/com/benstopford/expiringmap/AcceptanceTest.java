@@ -16,7 +16,7 @@ public class AcceptanceTest {
         ExpiringMap<Integer, String> map = new ExpiringMap<>();
 
         int expiry = 1000;
-        int numEntries = 1000;
+        int numEntries = 100;
 
         for (int i = 0; i < numEntries; i++) {
             map.put(i, "value" + i, expiry);

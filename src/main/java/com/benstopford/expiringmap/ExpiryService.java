@@ -20,7 +20,6 @@ public class ExpiryService<K> {
                     if (queue.peek().key().equals(head.key()))
                         waitService.doWait(ms, ns);
                 }
-
             }
         }
     }
